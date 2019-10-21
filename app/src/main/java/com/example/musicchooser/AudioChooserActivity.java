@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.File;
 import java.io.IOException;
 
 public class AudioChooserActivity extends AppCompatActivity {
@@ -24,6 +25,8 @@ public class AudioChooserActivity extends AppCompatActivity {
     private Button bPause;
     private Button bStop;
     private boolean isPaused = false;
+    private File file;
+    private TextView trackName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,52 +40,17 @@ public class AudioChooserActivity extends AppCompatActivity {
                 "Select Music"), SELECT_MUSIC);
 
         mediaPlayer = new MediaPlayer();
+        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         mediaPlayer.setLooping(false);
 
 
+        trackName = findViewById(R.id.trackName);
         bStop = findViewById(R.id.bStop);
         bPlay = findViewById(R.id.bPlay);
         bPause = findViewById(R.id.bPause);
         bPause.setEnabled(false);
 
-        bPlay.setOnClickListener(v -> {
-            releaseMP();
-            if (selectedMusicUri != null) {
 
-                Toast.makeText(this, "Hello", Toast.LENGTH_SHORT).show();
-//                try {
-//                    mediaPlayer.setDataSource(getApplicationContext(), selectedMusicUri);
-//                    mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-//                    mediaPlayer.prepare();
-//                    mediaPlayer.start();
-//                    bPlay.setEnabled(false);
-//                    bStop.setEnabled(true);
-//                    bPause.setEnabled(true);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-
-            }
-        });
-        bPause.setOnClickListener(v -> {
-            if (!isPaused) {
-                mediaPlayer.pause();
-                isPaused = true;
-                bPause.setText(getResources().getString(R.string.Resume));
-            } else {
-                mediaPlayer.start();
-                isPaused = false;
-                bPause.setText(getResources().getString(R.string.Pause));
-            }
-        });
-
-        bStop.setOnClickListener(v -> {
-            mediaPlayer.stop();
-            bPlay.setEnabled(true);
-            bStop.setEnabled(false);
-            bPause.setEnabled(false);
-
-        });
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -90,14 +58,13 @@ public class AudioChooserActivity extends AppCompatActivity {
             if (requestCode == SELECT_MUSIC) {
                 selectedMusicUri = data.getData();
                 if (selectedMusicUri != null) {
-                    String[] split = selectedMusicUri.toString().split("%2F");
-                    String trackName = split[split.length - 1];
-                    trackName = trackName.replaceAll("%20", " ");
-                    trackName = trackName.replaceAll("%E2%80%93", "-");
-                    ((TextView) findViewById(R.id.trackName)).setText(trackName);
+                    file = new File(selectedMusicUri.getPath());
+
+
+                    trackName.setText(file.getName());
                     try {
                         mediaPlayer.setDataSource(getApplicationContext(), selectedMusicUri);
-                        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//                        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                         mediaPlayer.prepareAsync();
                         mediaPlayer.setOnPreparedListener(MediaPlayer::start);
                         bPlay.setEnabled(false);
@@ -106,6 +73,45 @@ public class AudioChooserActivity extends AppCompatActivity {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
+                    bPlay.setOnClickListener(v -> {
+                        releaseMP();
+                        if (selectedMusicUri != null) {
+                            try {
+                                mediaPlayer = new MediaPlayer();
+                                mediaPlayer.setDataSource(getApplicationContext(), selectedMusicUri);
+                                mediaPlayer.prepare();
+                                mediaPlayer.start();
+                                bPlay.setEnabled(false);
+                                bStop.setEnabled(true);
+                                bPause.setEnabled(true);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (Exception e) {
+                                Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                            }
+
+                        }
+                    });
+                    bPause.setOnClickListener(v -> {
+                        if (!isPaused) {
+                            mediaPlayer.pause();
+                            isPaused = true;
+                            bPause.setText(getResources().getString(R.string.Resume));
+                        } else {
+                            mediaPlayer.start();
+                            isPaused = false;
+                            bPause.setText(getResources().getString(R.string.Pause));
+                        }
+                    });
+
+                    bStop.setOnClickListener(v -> {
+                        mediaPlayer.stop();
+                        bPlay.setEnabled(true);
+                        bStop.setEnabled(false);
+                        bPause.setEnabled(false);
+
+                    });
                 }
 
             }
