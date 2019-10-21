@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MusicChooser</string>
+    <string name="Resume">Resume</string>
+    <string name="Pause">Pause</string>
+</resources>
