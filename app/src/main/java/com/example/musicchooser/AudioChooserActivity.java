@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -46,24 +47,25 @@ public class AudioChooserActivity extends AppCompatActivity {
 
         bPlay.setOnClickListener(v -> {
             releaseMP();
-            if (!mediaPlayer.isPlaying()) {
-                if (selectedMusicUri != null) {
-                    try {
-                        mediaPlayer.setDataSource(getApplicationContext(), selectedMusicUri);
-                        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-                        mediaPlayer.prepare();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-                mediaPlayer.start();
+            if (selectedMusicUri != null) {
+
+                Toast.makeText(this, "Hello", Toast.LENGTH_SHORT).show();
+//                try {
+//                    mediaPlayer.setDataSource(getApplicationContext(), selectedMusicUri);
+//                    mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+//                    mediaPlayer.prepare();
+//                    mediaPlayer.start();
+//                    bPlay.setEnabled(false);
+//                    bStop.setEnabled(true);
+//                    bPause.setEnabled(true);
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+
             }
-            bPlay.setEnabled(false);
-            bStop.setEnabled(true);
-            bPause.setEnabled(true);
         });
         bPause.setOnClickListener(v -> {
-            if(!isPaused){
+            if (!isPaused) {
                 mediaPlayer.pause();
                 isPaused = true;
                 bPause.setText(getResources().getString(R.string.Resume));
@@ -91,12 +93,28 @@ public class AudioChooserActivity extends AppCompatActivity {
                     String[] split = selectedMusicUri.toString().split("%2F");
                     String trackName = split[split.length - 1];
                     trackName = trackName.replaceAll("%20", " ");
+                    trackName = trackName.replaceAll("%E2%80%93", "-");
                     ((TextView) findViewById(R.id.trackName)).setText(trackName);
+                    try {
+                        mediaPlayer.setDataSource(getApplicationContext(), selectedMusicUri);
+                        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+                        mediaPlayer.prepareAsync();
+                        mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+                        bPlay.setEnabled(false);
+                        bStop.setEnabled(true);
+                        bPause.setEnabled(true);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
+
             }
+
+
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
+
     private void releaseMP() {
         if (mediaPlayer != null) {
             try {
