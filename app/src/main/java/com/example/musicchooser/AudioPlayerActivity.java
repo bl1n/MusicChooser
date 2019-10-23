@@ -1,14 +1,13 @@
 package com.example.musicchooser;
 
+import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -17,22 +16,24 @@ import java.io.IOException;
 
 public class AudioPlayerActivity extends AppCompatActivity {
 
-    public static final int SELECT_MUSIC = 101;
     private static final String TAG = "AudioPlayerActivity";
 
     MediaPlayer mediaPlayer;
-    private Uri selectedMusicUri;
     private Button bPlay;
     private Button bPause;
     private Button bStop;
-    private Button mForward;
-    private Button mBackward;
+    private Button bForward;
+    private Button bBackward;
 
     private boolean isPaused = false;
-    private File file;
     private TextView mTrackName;
     private SeekBar mSeekBar;
     private SeekBar.OnSeekBarChangeListener mSeekBarChangeListener;
+    private File mFile;
+    private String mPath;
+
+    public AudioPlayerActivity() {
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +65,8 @@ public class AudioPlayerActivity extends AppCompatActivity {
         bPause = findViewById(R.id.bPause);
         bPause.setEnabled(false);
         mSeekBar = findViewById(R.id.seekBar);
+        bForward = findViewById(R.id.bForw);
+        bBackward = findViewById(R.id.bBack);
         mSeekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -79,46 +82,35 @@ public class AudioPlayerActivity extends AppCompatActivity {
                 setAudioProgress(seekBar.getProgress());
             }
         };
-        mSeekBar.setOnSeekBarChangeListener(mSeekBarChangeListener);
     }
 
     private void setAudioProgress(int progress) {
-        if (mediaPlayer != null && selectedMusicUri != null) {
+        if (mediaPlayer != null) {
             int newPosition = (progress * mediaPlayer.getDuration()) / 100;
             mediaPlayer.seekTo(newPosition);
         }
     }
 
+    private void startPlaying(File aFile) {
+        try {
+            mediaPlayer.setDataSource(aFile.getAbsolutePath());
+            mediaPlayer.prepareAsync();
+            mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+            bPlay.setEnabled(false);
+            bStop.setEnabled(true);
+            bPause.setEnabled(true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void bindAudio() {
-        String path = getIntent().getStringExtra("path");
-        if(path !=null){
-            File file = new File(path);
-            mTrackName.setText(file.getName());
-            try {
-                mediaPlayer.setDataSource(file.getAbsolutePath());
-                mediaPlayer.prepareAsync();
-                mediaPlayer.setOnPreparedListener(MediaPlayer::start);
-                bPlay.setEnabled(false);
-                bStop.setEnabled(true);
-                bPause.setEnabled(true);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            bPlay.setOnClickListener(v -> {
-                    try {
-                        mediaPlayer = new MediaPlayer();
-                        mediaPlayer.setDataSource(file.getAbsolutePath());
-                        mediaPlayer.prepare();
-                        mediaPlayer.start();
-                        bPlay.setEnabled(false);
-                        bStop.setEnabled(true);
-                        bPause.setEnabled(true);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (Exception e) {
-                        Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
-                    }
-            });
+        mPath = getIntent().getStringExtra("path");
+        if (mPath != null) {
+            mFile = new File(mPath);
+            mTrackName.setText(mFile.getName());
+            startPlaying(mFile);
+            bPlay.setOnClickListener(v -> startPlaying(mFile));
             bPause.setOnClickListener(v -> {
                 if (!isPaused) {
                     mediaPlayer.pause();
@@ -130,25 +122,26 @@ public class AudioPlayerActivity extends AppCompatActivity {
                     bPause.setText(getResources().getString(R.string.Pause));
                 }
             });
-
             bStop.setOnClickListener(v -> {
                 mediaPlayer.stop();
                 releaseMP();
-                bPlay.setEnabled(true);
-                bStop.setEnabled(false);
-                bPause.setEnabled(false);
+                startActivity(
+                        new Intent(this, ListOfSongsActivity.class)
+                );
+            });
+            bForward.setOnClickListener(v -> {
+                mediaPlayer.seekTo(mediaPlayer.getCurrentPosition() + 3000);
+            });
+            bBackward.setOnClickListener(v -> {
+                mediaPlayer.seekTo(mediaPlayer.getCurrentPosition() - 3000);
             });
 
+
+            mSeekBar.setOnSeekBarChangeListener(mSeekBarChangeListener);
         }
 
     }
 
-
-    @Override
-    public void onBackPressed() {
-        releaseMP();
-        super.onBackPressed();
-    }
 
     private void releaseMP() {
         if (mediaPlayer != null) {
@@ -159,5 +152,11 @@ public class AudioPlayerActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        releaseMP();
+        super.onDestroy();
     }
 }

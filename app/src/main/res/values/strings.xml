@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">MusicChooser</string>
+    <string name="app_name">AudioPlayer</string>
     <string name="Resume">Resume</string>
     <string name="Pause">Pause</string>
 
     <string name="permissions_request_message">Для корректной работы необходим доступ к внутренней памяти</string>
-    <string name="ok">ok</string>
+    <string name="ok">OK</string>
     <string name="back_off">Приложение не может работать без доступа к внутренней памяти</string>
 </resources>

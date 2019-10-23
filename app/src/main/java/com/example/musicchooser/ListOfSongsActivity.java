@@ -86,8 +86,14 @@ public class ListOfSongsActivity extends AppCompatActivity {
                 listFilesWithSubFolders(f);
             } else {
                 String trackName = f.getName().toLowerCase();
-                if (trackName.contains(".mp3") || trackName.contains(".m4a") || trackName.contains(".wav")) {
-                    Log.d(TAG, "added" + f.getName());
+                //Вероятно, есть более удобный способ отфильтровать.
+                //Стоит покапаться в фрэймфорке.
+                if (trackName.contains(".mp3")
+                        || trackName.contains(".m4a")
+                        || trackName.contains(".wav")
+                        || trackName.contains(".flac")
+                        || trackName.contains(".ogg")
+                        || trackName.contains(".mp4"))  {
                     mTrackAdapter.addTrack(new Track(f.getName(), f.getAbsolutePath()));
                 }
             }
