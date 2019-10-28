@@ -1,6 +1,7 @@
 package com.example.musicchooser;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
@@ -14,7 +15,12 @@ import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.io.File;
+import java.util.ArrayList;
 
 import static android.content.pm.PackageManager.PERMISSION_DENIED;
 
@@ -98,5 +104,28 @@ public class ListOfSongsActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void openTrack(OpenAudioPlayerEvent aEvent){
+        Intent intent = new Intent(this, AudioPlayerActivity.class);
+        ArrayList<String> paths = new ArrayList<>();
+        for(Track track: mTrackAdapter.getTracks()){
+            paths.add(track.getPath());
+        }
+        intent.putStringArrayListExtra("paths", paths);
+        intent.putExtra("path", aEvent.getPath());
+        startActivity(intent);
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        EventBus.getDefault().unregister(this);
     }
 }

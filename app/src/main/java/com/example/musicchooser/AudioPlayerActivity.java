@@ -1,6 +1,11 @@
 package com.example.musicchooser;
 
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -8,15 +13,20 @@ import android.os.Handler;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class AudioPlayerActivity extends AppCompatActivity {
 
     private static final String TAG = "AudioPlayerActivity";
+    private static final float SHAKE_TRESHOLD = 600;
 
     MediaPlayer mediaPlayer;
     private Button bPlay;
@@ -31,6 +41,45 @@ public class AudioPlayerActivity extends AppCompatActivity {
     private SeekBar.OnSeekBarChangeListener mSeekBarChangeListener;
     private File mFile;
     private String mPath;
+    private List<String> mPaths = new ArrayList<>();
+
+    private SensorManager mSensorManager;
+    private Sensor mSensorAccelerator;
+    private long lastUpdate;
+    private float lastX;
+    private float lastY;
+    private float lastZ;
+
+    private SensorEventListener mSensorEventListener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            switch (event.sensor.getType()) {
+                case Sensor.TYPE_ACCELEROMETER: {
+                    float x = event.values[0];
+                    float y = event.values[1];
+                    float z = event.values[2];
+
+                    long currentTime = System.currentTimeMillis();
+                    long dt = currentTime - lastUpdate;
+                    if (dt > 100) {
+                        lastUpdate = currentTime;
+                        float speed = Math.abs(x + y + z - lastX - lastY - lastZ) / dt * 10000;
+                        if (speed > SHAKE_TRESHOLD) {
+                            randomTrack();
+                        }
+                        lastY = y;
+                        lastX = x;
+                        lastZ = z;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+        }
+    };
 
     public AudioPlayerActivity() {
     }
@@ -42,6 +91,10 @@ public class AudioPlayerActivity extends AppCompatActivity {
         init();
         bindAudio();
 
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        if (mSensorManager != null) {
+            mSensorAccelerator = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
         Handler handler = new Handler();
         AudioPlayerActivity.this.runOnUiThread(new Runnable() {
             @Override
@@ -104,6 +157,25 @@ public class AudioPlayerActivity extends AppCompatActivity {
         }
     }
 
+    private void randomTrack() {
+        ArrayList<String> paths = getIntent().getStringArrayListExtra("paths");
+        Toast.makeText(this, "shaked" , Toast.LENGTH_SHORT).show();
+
+        Toast.makeText(this, "shaked" + paths.size() , Toast.LENGTH_SHORT).show();
+        if (paths.size() > 0) {
+            Random random = new Random();
+//            File file = new File(paths.get(0));
+            File file = new File(paths.get(random.nextInt(paths.size() - 1)));
+            mTrackName.setText(file.getName());
+            releaseMP();
+            mediaPlayer = new MediaPlayer();
+            startPlaying(file);
+            Toast.makeText(this, "shaked", Toast.LENGTH_SHORT).show();
+        }
+
+
+    }
+
     private void bindAudio() {
         mPath = getIntent().getStringExtra("path");
         if (mPath != null) {
@@ -140,8 +212,21 @@ public class AudioPlayerActivity extends AppCompatActivity {
             mSeekBar.setOnSeekBarChangeListener(mSeekBarChangeListener);
         }
 
+
+
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mSensorManager.registerListener(mSensorEventListener, mSensorAccelerator, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mSensorManager.unregisterListener(mSensorEventListener);
+    }
 
     private void releaseMP() {
         if (mediaPlayer != null) {

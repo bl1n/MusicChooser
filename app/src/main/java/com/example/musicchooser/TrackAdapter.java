@@ -1,6 +1,5 @@
 package com.example.musicchooser;
 
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,10 +8,16 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.AudioHolder> {
+
+    public List<Track> getTracks() {
+        return mTracks;
+    }
 
     private List<Track> mTracks = new ArrayList<>();
 
@@ -33,9 +38,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.AudioHolder>
         Track track = mTracks.get(position);
         ((TextView)holder.itemView.findViewById(R.id.trackName)).setText(track.getName());
         holder.itemView.setOnClickListener(v->{
-            Intent intent  = new Intent(holder.itemView.getContext(), AudioPlayerActivity.class);
-            intent.putExtra("path", track.getPath());
-            holder.itemView.getContext().startActivity(intent);
+            EventBus.getDefault().post(new OpenAudioPlayerEvent(track.getPath()));
         });
     }
 
