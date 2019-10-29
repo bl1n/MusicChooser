@@ -99,7 +99,7 @@ public class ListOfSongsActivity extends AppCompatActivity {
                         || trackName.contains(".wav")
                         || trackName.contains(".flac")
                         || trackName.contains(".ogg")
-                        || trackName.contains(".mp4"))  {
+                )  {
                     mTrackAdapter.addTrack(new Track(f.getName(), f.getAbsolutePath()));
                 }
             }

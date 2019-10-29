@@ -49,7 +49,7 @@ public class TrackAdapter extends RecyclerView.Adapter<TrackAdapter.AudioHolder>
 
     class AudioHolder extends RecyclerView.ViewHolder{
 
-        public AudioHolder(@NonNull View itemView) {
+        AudioHolder(@NonNull View itemView) {
             super(itemView);
         }
     }

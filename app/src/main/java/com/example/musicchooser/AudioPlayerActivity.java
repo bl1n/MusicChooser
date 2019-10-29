@@ -20,13 +20,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 public class AudioPlayerActivity extends AppCompatActivity {
 
     private static final String TAG = "AudioPlayerActivity";
-    private static final float SHAKE_TRESHOLD = 600;
+    private static final float SHAKE_TRESHOLD = 1500;
 
     MediaPlayer mediaPlayer;
     private Button bPlay;
@@ -41,7 +40,6 @@ public class AudioPlayerActivity extends AppCompatActivity {
     private SeekBar.OnSeekBarChangeListener mSeekBarChangeListener;
     private File mFile;
     private String mPath;
-    private List<String> mPaths = new ArrayList<>();
 
     private SensorManager mSensorManager;
     private Sensor mSensorAccelerator;
@@ -50,6 +48,7 @@ public class AudioPlayerActivity extends AppCompatActivity {
     private float lastY;
     private float lastZ;
 
+    private boolean isCovered = false;
     private SensorEventListener mSensorEventListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent event) {
@@ -71,6 +70,23 @@ public class AudioPlayerActivity extends AppCompatActivity {
                         lastX = x;
                         lastZ = z;
                     }
+
+                    //если телефон повернут вниз экраном и прижат то  пауза
+                    // -8 для неровных поверхностей.
+                    if(event.values[2]<-8 && isCovered){
+                        mediaPlayer.pause();
+                    }
+
+                    //если телефон не прижат, плеер не null, не работает и не нажата пауза, то start
+                    if(!isCovered && mediaPlayer != null && !mediaPlayer.isPlaying() && !isPaused ){
+                        mediaPlayer.start();
+                    }
+                    break;
+                }
+                case Sensor.TYPE_PROXIMITY: {
+                    float cm = event.values[0];
+                    isCovered = cm == 0;
+                    break;
                 }
             }
         }
@@ -80,6 +96,7 @@ public class AudioPlayerActivity extends AppCompatActivity {
 
         }
     };
+    private Sensor mProximitySensor;
 
     public AudioPlayerActivity() {
     }
@@ -94,6 +111,7 @@ public class AudioPlayerActivity extends AppCompatActivity {
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (mSensorManager != null) {
             mSensorAccelerator = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            mProximitySensor = mSensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
         }
         Handler handler = new Handler();
         AudioPlayerActivity.this.runOnUiThread(new Runnable() {
@@ -159,9 +177,9 @@ public class AudioPlayerActivity extends AppCompatActivity {
 
     private void randomTrack() {
         ArrayList<String> paths = getIntent().getStringArrayListExtra("paths");
-        Toast.makeText(this, "shaked" , Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "shaked", Toast.LENGTH_SHORT).show();
 
-        Toast.makeText(this, "shaked" + paths.size() , Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "shaked" + paths.size(), Toast.LENGTH_SHORT).show();
         if (paths.size() > 0) {
             Random random = new Random();
 //            File file = new File(paths.get(0));
@@ -213,13 +231,13 @@ public class AudioPlayerActivity extends AppCompatActivity {
         }
 
 
-
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         mSensorManager.registerListener(mSensorEventListener, mSensorAccelerator, SensorManager.SENSOR_DELAY_NORMAL);
+        mSensorManager.registerListener(mSensorEventListener, mProximitySensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
